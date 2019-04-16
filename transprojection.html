@@ -1,0 +1,79 @@
+﻿<!DOCTYPE>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>投影转换</title>
+        <style type="text/css">
+            body{
+                margin: 0;
+                overflow: hidden;
+                background: #fff;
+            }
+            #map{
+                position: relative;
+                height: 558px;
+                border:1px solid #3473b7;
+            }
+            #mousePositionDiv{
+                position: absolute;
+                z-index: 99;
+                left:350px;
+                top:10px;
+                top:10px;
+                font-family: Arial;
+                font-size: smaller;
+            }
+        </style>
+        <script src='libs/SuperMap.Include.js'></script>
+		<script type="text/javascript" language="javascript" src="./js/proj4js/lib/proj4js-combined.js"></script>
+        <script type="text/javascript">
+            var map, local, layer,control,
+            // host = document.location.toString().match(/file:\/\//)?"http://localhost:8090":'http://' + document.location.host,
+            host = "http://localhost:8090",
+            url=host+"/iserver/services/map-beijing1954Region/rest/maps/Region";
+            function init(){
+				//定义投影Beijing_1954_GK_Zone_18信息
+				Proj4js.defs["EPSG:21418"] = "+proj=tmerc +lat_0=0 +lon_0=105 +k=1 +x_0=18500000 +y_0=0 +ellps=krass +units=m +no_defs";
+				
+				map = new SuperMap.Map("map", {controls:[
+                    new SuperMap.Control.LayerSwitcher(),
+                    new SuperMap.Control.ScaleLine(),
+                    new SuperMap.Control.Zoom(),
+                    new SuperMap.Control.Navigation({
+                        dragPanOptions: {
+                            enableKinetic: true
+                        }
+                    })],
+					//设置地图的投影方式
+					projection: new SuperMap.Projection("EPSG:21418"),
+					//设置MousePosition控件的鼠标位置的需要进行的投影方式
+					displayProjection: "EPSG:4326"
+                });
+				map.addControl(new SuperMap.Control.MousePosition());
+
+                layer = new SuperMap.Layer.TiledDynamicRESTLayer("beijing1954", url, {
+                    transparent: true, cacheEnabled: true}, {maxResolution:"auto"});
+                layer.events.on({"layerInitialized": addLayer});
+            }
+
+            function addLayer() {
+                map.addLayer(layer);
+                map.setCenter(new SuperMap.LonLat(16557071.48 , 4631975.24), 0);
+				
+				
+				var lonLat = new SuperMap.LonLat(103.96935,30.48584);
+                if (!lonLat) {
+                    return;
+                }
+                //坐标转换
+                lonLat.transform("EPSG:4326", new SuperMap.Projection("EPSG:21418") );
+				
+				alert("WGS1984坐标(103.96935,30.48584)转换成北京1954的坐标为: x=" + lonLat.lon.toFixed(5) + "，y=" + lonLat.lat.toFixed(5));
+            }
+        </script>
+    </head>
+    <body onload="init()">
+        <div id='mousePositionDiv' class='smCustomControlMousePosition'></div>
+        <div id="map"></div>
+    </body>
+</html>
